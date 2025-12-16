@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OIDC Provider Implementation Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            margin-bottom: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        nav {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        section {
+            background: white;
+            padding: 40px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            font-size: 2em;
+        }
+        
+        h3 {
+            color: #764ba2;
+            margin: 30px 0 15px 0;
+            font-size: 1.5em;
+        }
+        
+        h4 {
+            color: #555;
+            margin: 20px 0 10px 0;
+            font-size: 1.2em;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border-left: 4px solid #667eea;
+            margin: 15px 0;
+        }
+        
+        code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .inline-code {
+            background: #f1f3f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #e83e8c;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+        
+        .alert-info {
+            background: #e7f3ff;
+            border-color: #2196F3;
+            color: #0c5460;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge-get {
+            background: #28a745;
+            color: white;
+        }
+        
+        .badge-post {
+            background: #007bff;
+            color: white;
+        }
+        
+        .badge-required {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .badge-optional {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .flow-diagram {
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .flow-step {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .flow-step h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            section {
+                padding: 20px;
+            }
+            
+            nav ul {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 OIDC Provider Implementation Guide</h1>
+            <p>Complete documentation for backend and frontend integration</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#backend">Backend Setup</a></li>
+                <li><a href="#frontend">Frontend Setup</a></li>
+                <li><a href="#api-reference">API Reference</a></li>
+                <li><a href="#flow">Authentication Flow</a></li>
+                <li><a href="#security">Security</a></li>
+            </ul>
+        </nav>
+
+        <!-- Overview Section -->
+        <section id="overview">
+            <h2>📋 Overview</h2>
+            <p>This OIDC (OpenID Connect) provider implementation follows the OAuth 2.0 Authorization Code Flow with PKCE (Proof Key for Code Exchange) for secure authentication.</p>
+            
+            <h3>Key Features</h3>
+            <ul>
+                <li>✅ OAuth 2.0 Authorization Code Flow with PKCE</li>
+                <li>✅ Custom login and consent pages</li>
+                <li>✅ Automatic token exchange</li>
+                <li>✅ Refresh token support</li>
+                <li>✅ Token introspection and revocation</li>
+                <li>✅ Session management</li>
+            </ul>
+
+            <h3>Architecture</h3>
+            <div class="alert alert-info">
+                <strong>Backend:</strong> NestJS with oidc-provider library<br>
+                <strong>Frontend:</strong> Next.js 16 (App Router)<br>
+                <strong>Database:</strong> Prisma ORM
+            </div>
+        </section>
+
+        <!-- Backend Section -->
+        <section id="backend">
+            <h2>⚙️ Backend Implementation</h2>
+
+            <h3>1. Project Structure</h3>
+            <pre><code>vlife-api/src/modules/oidc-provider/
+├── adapters/
+│   └── prisma.adapter.ts          # Database adapter
+├── config/
+│   └── oidc.config.ts             # OIDC configuration
+├── controllers/
+│   └── oidc-interaction.controller.ts  # Login/Consent handlers
+├── types/
+│   └── oidc.types.ts              # TypeScript types
+├── utils/
+│   └── generate-keys.ts           # Key generation utility
+├── oidc-provider.controller.ts    # Main OIDC endpoints
+├── oidc-provider.service.ts       # OIDC provider service
+└── oidc-provider.module.ts        # Module definition</code></pre>
+
+            <h3>2. Key Controllers</h3>
+
+            <h4>OidcProviderController</h4>
+            <p>Handles standard OIDC endpoints:</p>
+            <pre><code>@Controller({ path: 'oidc', version: VERSION_NEUTRAL })
+export class OidcProviderController {
+  @All(['auth', 'auth/*', 'token', 'userinfo', 'jwks', ...])
+  async handleOidc(@Req() req, @Res() res) {
+    await this.oidcService.getCallback()(req, res);
+  }
+}</code></pre>
+
+            <h4>OidcInteractionController</h4>
+            <p>Handles custom login and consent flows:</p>
+            <pre><code>@Controller({ path: 'oidc/interaction', version: VERSION_NEUTRAL })
+export class OidcInteractionController {
+  
+  // Redirects to login or consent page
+  @Get(':uid')
+  async getInteraction(@Param('uid') uid, @Req() req, @Res() res) {
+    const { prompt } = await this.oidcService.getInteractionDetails(req, res);
+    
+    if (prompt.name === 'login') {
+      return res.redirect(`http://localhost:3000/login?uid=${uid}`);
+    } else if (prompt.name === 'consent') {
+      return res.redirect(`http://localhost:3000/consent?uid=${uid}`);
+    }
+  }
+
+  // Handles login submission
+  @Post(':uid/login')
+  async login(@Param('uid') uid, @Body() body, @Req() req, @Res() res) {
+    // Validate credentials
+    const user = await this.userRepository.findUserByEmail(body.email);
+    
+    // Complete login interaction
+    await this.oidcService.finishInteraction(req, res, {
+      login: { accountId: user.id, remember: true }
+    });
+    return; // CRITICAL: Prevent double response
+  }
+
+  // Handles consent submission
+  @Post(':uid/consent')
+  async consent(@Param('uid') uid, @Req() req, @Res() res) {
+    // Create grant with requested scopes
+    const grant = new provider.Grant({ accountId, clientId });
+    grant.addOIDCScope('openid profile email');
+    const grantId = await grant.save();
+    
+    await this.oidcService.finishInteraction(req, res, {
+      consent: { grantId }
+    });
+    return; // CRITICAL: Prevent double response
+  }
+}</code></pre>
+
+            <h3>3. Service Configuration</h3>
+            <pre><code>// oidc-provider.service.ts
+const configuration: Configuration = {
+  adapter: PrismaAdapter,
+  clients: await this.loadClientsFromDatabase(),
+  
+  findAccount: async (ctx, id) => {
+    const user = await this.userRepository.findUserById(id);
+    return {
+      accountId: id,
+      async claims(use, scope) {
+        return {
+          sub: id,
+          email: user.email,
+          name: `${user.firstName} ${user.lastName}`,
+          // ... other claims
+        };
+      }
+    };
+  },
+  
+  ttl: {
+    AccessToken: 60 * 60,      // 1 hour
+    RefreshToken: 14 * 24 * 60 * 60,  // 14 days
+  },
+  
+  pkce: {
+    required: (ctx, client) => !client.client_secret
+  }
+};</code></pre>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ Important:</strong> Always add explicit <span class="inline-code">return;</span> statements after calling <span class="inline-code">finishInteraction()</span> to prevent NestJS from sending duplicate responses.
+            </div>
+        </section>
+
+        <!-- Frontend Section -->
+        <section id="frontend">
+            <h2>🎨 Frontend Implementation</h2>
+
+            <h3>1. Project Structure</h3>
+            <pre><code>oidc-provider/app/
+├── auth/
+│   └── callback/
+│       └── page.tsx          # Callback handler
+├── login/
+│   └── page.tsx              # Login page
+├── consent/
+│   └── page.tsx              # Consent page
+├── api/
+│   └── proxy-auth/
+│       └── route.ts          # Auth proxy (optional)
+└── page.tsx                  # Main test client</code></pre>
+
+            <h3>2. PKCE Helper Functions</h3>
+            <pre><code>// Generate random string for code verifier
+function generateRandomString(length: number): string {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let result = '';
+  const randomValues = new Uint8Array(length);
+  crypto.getRandomValues(randomValues);
+  randomValues.forEach((v) => {
+    result += charset[v % charset.length];
+  });
+  return result;
+}
+
+// Generate code challenge from verifier
+async function sha256(plain: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}</code></pre>
+
+            <h3>3. Login Page</h3>
+            <pre><code>// app/login/page.tsx
+export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const uid = searchParams.get("uid");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    form.action = `/oidc/interaction/${uid}/login`;
+    form.method = "POST";
+    form.submit(); // Natural form submission for redirects
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="email" type="email" required />
+      <input name="password" type="password" required />
+      <button type="submit">Sign In</button>
+    </form>
+  );
+}</code></pre>
+
+            <h3>4. Consent Page</h3>
+            <pre><code>// app/consent/page.tsx
+export default function ConsentPage() {
+  const uid = useSearchParams().get("uid");
+
+  const handleConsent = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/oidc/interaction/${uid}/consent`;
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  return (
+    <form onSubmit={handleConsent}>
+      <ul>
+        <li>openid</li>
+        <li>profile</li>
+        <li>email</li>
+      </ul>
+      <button type="submit">Authorize</button>
+    </form>
+  );
+}</code></pre>
+
+            <h3>5. Callback Page (Automatic Token Exchange)</h3>
+            <pre><code>// app/auth/callback/page.tsx
+export default function AuthCallbackPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (!code) return;
+
+    // Automatically exchange code for tokens
+    const codeVerifier = sessionStorage.getItem('code_verifier');
+    
+    fetch('/oidc/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: 'http://localhost:3000/auth/callback',
+        client_id: 'partner-dashboard-local-2',
+        code_verifier: codeVerifier,
+      })
+    })
+    .then(res => res.json())
+    .then(tokens => {
+      sessionStorage.setItem('access_token', tokens.access_token);
+      sessionStorage.setItem('tokens', JSON.stringify(tokens));
+      router.push('/');
+    });
+  }, [searchParams]);
+
+  return <div>Processing authentication...</div>;
+}</code></pre>
+
+            <div class="alert alert-success">
+                <strong>✅ Best Practice:</strong> Use traditional form submissions for login/consent to allow natural browser redirects and avoid CORS issues.
+            </div>
+        </section>
+
+        <!-- API Reference Section -->
+        <section id="api-reference">
+            <h2>📚 API Reference</h2>
+
+            <h3>Standard OIDC Endpoints</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="inline-code">/oidc/auth</span></td>
+                        <td><span class="badge badge-get">GET</span></td>
+                        <td>Start authorization flow</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/token</span></td>
+                        <td><span class="badge badge-post">POST</span></td>
+                        <td>Exchange code for tokens</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/userinfo</span></td>
+                        <td><span class="badge badge-get">GET</span></td>
+                        <td>Get user information</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/jwks</span></td>
+                        <td><span class="badge badge-get">GET</span></td>
+                        <td>Get JSON Web Key Set</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/.well-known/openid-configuration</span></td>
+                        <td><span class="badge badge-get">GET</span></td>
+                        <td>Get provider metadata</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/introspection</span></td>
+                        <td><span class="badge badge-post">POST</span></td>
+                        <td>Introspect token</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/revocation</span></td>
+                        <td><span class="badge badge-post">POST</span></td>
+                        <td>Revoke token</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/end_session</span></td>
+                        <td><span class="badge badge-get">GET</span></td>
+                        <td>End user session</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Interaction Endpoints</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="inline-code">/oidc/interaction/:uid</span></td>
+                        <td><span class="badge badge-get">GET</span></td>
+                        <td>Get interaction details (redirects to login/consent)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/interaction/:uid/login</span></td>
+                        <td><span class="badge badge-post">POST</span></td>
+                        <td>Submit login credentials</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/interaction/:uid/consent</span></td>
+                        <td><span class="badge badge-post">POST</span></td>
+                        <td>Grant consent</td>
+                    </tr>
+                    <tr>
+                        <td><span class="inline-code">/oidc/interaction/:uid/abort</span></td>
+                        <td><span class="badge badge-post">POST</span></td>
+                        <td>Abort interaction</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Token Exchange Request</h3>
+            <pre><code>POST /oidc/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=AUTHORIZATION_CODE
+&redirect_uri=http://localhost:3000/auth/callback
+&client_id=partner-dashboard-local-2
+&code_verifier=CODE_VERIFIER</code></pre>
+
+            <h3>Token Exchange Response</h3>
+            <pre><code>{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+}</code></pre>
+        </section>
+
+        <!-- Authentication Flow Section -->
+        <section id="flow">
+            <h2>🔄 Complete Authentication Flow</h2>
+
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <h4>Step 1: Generate PKCE Values</h4>
+                    <pre><code>const codeVerifier = generateRandomString(128);
+const codeChallenge = await sha256(codeVerifier);
+sessionStorage.setItem('code_verifier', codeVerifier);</code></pre>
+                </div>
+
+                <div class="flow-step">
+                    <h4>Step 2: Initiate Authorization</h4>
+                    <pre><code>window.location.href = '/oidc/auth?' + new URLSearchParams({
+  client_id: 'partner-dashboard-local-2',
+  redirect_uri: 'http://localhost:3000/auth/callback',
+  scope: 'openid profile email',
+  response_type: 'code',
+  code_challenge: codeChallenge,
+  code_challenge_method: 'S256'
+});</code></pre>
+                </div>
+
+                <div class="flow-step">
+                    <h4>Step 3: User Redirected to Login</h4>
+                    <p>Backend redirects to: <span class="inline-code">http://localhost:3000/login?uid=INTERACTION_UID</span></p>
+                </div>
+
+                <div class="flow-step">
+                    <h4>Step 4: Submit Login Form</h4>
+                    <pre><code>&lt;form method="POST" action="/oidc/interaction/{uid}/login"&gt;
+  &lt;input name="email" type="email" /&gt;
+  &lt;input name="password" type="password" /&gt;
+  &lt;button type="submit"&gt;Sign In&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+                </div>
+
+                <div class="flow-step">
+                    <h4>Step 5: User Redirected to Consent (if needed)</h4>
+                    <p>Backend redirects to: <span class="inline-code">http://localhost:3000/consent?uid=INTERACTION_UID</span></p>
+                </div>
+
+                <div class="flow-step">
+                    <h4>Step 6: Submit Consent</h4>
+                    <pre><code>&lt;form method="POST" action="/oidc/interaction/{uid}/consent"&gt;
+  &lt;button type="submit"&gt;Authorize&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+                </div>
+
+                <div class="flow-step">
+                    <h4>Step 7: Redirect to Callback with Code</h4>
+                    <p>Backend redirects to: <span class="inline-code">http://localhost:3000/auth/callback?code=AUTH_CODE&iss=...</span></p>
+                </div>
+
+                <div class="flow-step">
+                    <h4>Step 8: Automatic Token Exchange</h4>
+                    <p>Callback page automatically exchanges the authorization code for tokens and stores them in sessionStorage.</p>
+                </div>
+
+                <div class="flow-step">
+                    <h4>Step 9: Redirect to Application</h4>
+                    <p>User is redirected back to the main application with tokens ready to use.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security Section -->
+        <section id="security">
+            <h2>🔒 Security Best Practices</h2>
+
+            <h3>1. PKCE Implementation</h3>
+            <div class="alert alert-danger">
+                <strong>🔴 Critical:</strong> Always use PKCE for public clients (SPAs, mobile apps) to prevent authorization code interception attacks.
+            </div>
+            <ul>
+                <li>Generate a cryptographically random code verifier (128 characters)</li>
+                <li>Create code challenge using SHA-256 hash</li>
+                <li>Store code verifier securely in sessionStorage</li>
+                <li>Send code challenge with authorization request</li>
+                <li>Send code verifier with token exchange request</li>
+            </ul>
+
+            <h3>2. Token Storage</h3>
+            <div class="alert alert-warning">
+                <strong>⚠️ Production Recommendation:</strong> Store tokens in httpOnly cookies instead of sessionStorage for better security against XSS attacks.
+            </div>
+            <ul>
+                <li>Never store tokens in localStorage (vulnerable to XSS)</li>
+                <li>Use sessionStorage for development/testing</li>
+                <li>Use httpOnly cookies in production</li>
+                <li>Implement proper CSRF protection</li>
+            </ul>
+
+            <h3>3. HTTPS Requirements</h3>
+            <ul>
+                <li>✅ Always use HTTPS in production</li>
+                <li>✅ Secure cookies with Secure flag</li>
+                <li>✅ Use SameSite=Lax or SameSite=Strict for cookies</li>
+            </ul>
+
+            <h3>4. Token Validation</h3>
+            <ul>
+                <li>Verify ID token signature using JWKS</li>
+                <li>Validate token expiration</li>
+                <li>Check token issuer matches expected value</li>
+                <li>Verify audience claim</li>
+            </ul>
+
+            <h3>5. Session Management</h3>
+            <ul>
+                <li>Implement proper logout flow</li>
+                <li>Revoke tokens on logout</li>
+                <li>Handle token refresh before expiration</li>
+                <li>Clear all stored tokens on logout</li>
+            </ul>
+
+            <h3>6. Error Handling</h3>
+            <pre><code>// Always handle errors gracefully
+try {
+  const response = await fetch('/oidc/token', { ... });
+  if (!response.ok) {
+    const error = await response.json();
+    // Log error and show user-friendly message
+    console.error('Token exchange failed:', error);
+    throw new Error(error.error_description || 'Authentication failed');
+  }
+} catch (error) {
+  // Handle network errors, etc.
+  console.error('Authentication error:', error);
+}</code></pre>
+        </section>
+
+        <footer>
+            <p>📄 OIDC Provider Implementation Guide | Last Updated: December 2025</p>
+            <p>Built with NestJS, Next.js, and oidc-provider</p>
+        </footer>
+    </div>
+</body>
+</html>
