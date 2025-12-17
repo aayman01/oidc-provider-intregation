@@ -318,7 +318,7 @@
             <p>Handles standard OIDC endpoints:</p>
             <pre><code>@Controller({ path: 'oidc', version: VERSION_NEUTRAL })
 export class OidcProviderController {
-  @All(['auth', 'auth/*', 'token', 'userinfo', 'jwks', ...])
+  @All(['auth', 'auth/*', 'token', 'me', 'jwks', ...])
   async handleOidc(@Req() req, @Res() res) {
     await this.oidcService.getCallback()(req, res);
   }
@@ -561,7 +561,7 @@ export default function AuthCallbackPage() {
                         <td>Exchange code for tokens</td>
                     </tr>
                     <tr>
-                        <td><span class="inline-code">/oidc/userinfo</span></td>
+                        <td><span class="inline-code">/oidc/me</span></td>
                         <td><span class="badge badge-get">GET</span></td>
                         <td>Get user information</td>
                     </tr>

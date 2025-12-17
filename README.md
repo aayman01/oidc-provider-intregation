@@ -214,7 +214,7 @@ The frontend interacts with these OIDC backend endpoints:
 | ---------------------------------------- | ------ | ------------------------ |
 | `/oidc/auth`                             | GET    | Start authorization flow |
 | `/oidc/token`                            | POST   | Exchange code for tokens |
-| `/oidc/userinfo`                         | GET    | Get user information     |
+| `/oidc/me`                               | GET    | Get user information     |
 | `/oidc/introspection`                    | POST   | Introspect token         |
 | `/oidc/revocation`                       | POST   | Revoke token             |
 | `/oidc/end_session`                      | GET    | End user session         |

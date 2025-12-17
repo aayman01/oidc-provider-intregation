@@ -62,7 +62,7 @@ export default function Home() {
       const params = new URLSearchParams({
         client_id: "partner-dashboard-local-2",
         redirect_uri: "http://localhost:3000/auth/callback",
-        scope: "openid profile email",
+        scope: "openid profile email offline_access",
         response_type: "code",
         code_challenge: codeChallenge,
         code_challenge_method: "S256",
@@ -87,7 +87,7 @@ export default function Home() {
         throw new Error("No access token found. Please exchange code first.");
       }
 
-      const response = await fetch("/oidc/userinfo", {
+      const response = await fetch("/oidc/me", {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -200,35 +200,78 @@ export default function Home() {
   };
 
   // 6. Revoke Token
+  // const revokeToken = async () => {
+  //   setLoading(true);
+  //   setError(null);
+
+  //   try {
+  //     const accessToken = sessionStorage.getItem("access_token");
+  //     if (!accessToken) {
+  //       throw new Error("No access token found.");
+  //     }
+
+  //     const params = new URLSearchParams({
+  //       token: accessToken,
+  //       client_id: "partner-dashboard-local-2",
+  //     });
+
+  //     const response = await fetch("/oidc/revocation", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  //       body: params.toString(),
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Token revocation failed");
+  //     }
+
+  //     alert("Token revoked successfully");
+  //     sessionStorage.clear();
+  //     setTokens(null);
+  //     setUserInfo(null);
+  //   } catch (err: any) {
+  //     setError(err.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const revokeToken = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const accessToken = sessionStorage.getItem("access_token");
-      if (!accessToken) {
-        throw new Error("No access token found.");
+      const refreshToken = sessionStorage.getItem("refresh_token");
+
+      if (!refreshToken) {
+        throw new Error("No refresh token found.");
       }
 
       const params = new URLSearchParams({
-        token: accessToken,
+        token: refreshToken,
+        token_type_hint: "refresh_token",
         client_id: "partner-dashboard-local-2",
       });
 
-      const response = await fetch("/oidc/revocation", {
+      const response = await fetch("/oidc/token/revocation", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
         body: params.toString(),
       });
 
+      // RFC 7009: success == 200
       if (!response.ok) {
         throw new Error("Token revocation failed");
       }
 
-      alert("Token revoked successfully");
+      // Local cleanup
       sessionStorage.clear();
       setTokens(null);
       setUserInfo(null);
+      setIntrospectionResult(null);
+
+      alert("Refresh token revoked successfully");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -239,25 +282,64 @@ export default function Home() {
   // 7. Logout
   const logout = () => {
     const idToken = tokens?.id_token;
-    const params = new URLSearchParams({
-      post_logout_redirect_uri: "http://localhost:3000",
-    });
+
+    // 🔥 Clear client-side auth state immediately
+    sessionStorage.clear();
+    setTokens(null);
+    setUserInfo(null);
+    setIntrospectionResult(null);
+
+    const logoutUrl = new URL("http://localhost:4001/oidc/session/end");
+
+    logoutUrl.searchParams.set(
+      "post_logout_redirect_uri",
+      "http://localhost:3000"
+    );
+
     if (idToken) {
-      params.set("id_token_hint", idToken);
+      logoutUrl.searchParams.set("id_token_hint", idToken);
     }
-    window.location.href = `/oidc/end_session?${params.toString()}`;
+
+    // Optional but recommended
+    logoutUrl.searchParams.set("state", crypto.randomUUID());
+
+    window.location.href = logoutUrl.toString();
   };
 
   return (
     <div className="min-h-screen bg-zinc-50 p-8 font-sans">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          OIDC Test Client
-        </h1>
-        <p className="text-gray-600 mb-8">
-          Test all OIDC authentication endpoints
-        </p>
+        <div className="flex items-center justify-between">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              OIDC Test Client
+            </h1>
+            <p className="text-gray-600">
+              Test all OIDC authentication endpoints
+            </p>
+          </div>
+          <div className="">
+            {tokens ? (
+              <div className="flex items-center gap-3 bg-green-100 text-green-800 px-4 py-2 rounded-full shadow">
+                <span className="text-base font-medium">Authenticated</span>
 
+                <button
+                  onClick={logout}
+                  className="ml-2 text-base bg-red-600 text-white px-3 py-2 font-semibold rounded-full hover:bg-red-700"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={startAuthFlow}
+                className="bg-blue-600 text-white px-4 py-2 rounded-full shadow hover:bg-blue-700 text-base font-medium"
+              >
+                Login
+              </button>
+            )}
+          </div>
+        </div>
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
             <strong>Error:</strong> {error}

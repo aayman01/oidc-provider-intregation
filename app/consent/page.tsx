@@ -14,7 +14,7 @@ export default function ConsentPage() {
   useEffect(() => {
     // You could fetch interaction details here to show what scopes are requested
     // For now, we'll use the default scopes from the URL
-    setScopes(["openid", "profile", "email"]);
+    setScopes(["openid", "profile", "email", "offline_access"]);
   }, [uid]);
 
   const handleConsent = async (e: React.FormEvent) => {
