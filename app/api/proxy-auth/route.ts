@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   // The OIDC Auth URL
   const oidcUrl =
-    "http://localhost:4001/oidc/auth?client_id=partner-dashboard-local-2&redirect_uri=http://localhost:3000/auth/callback&scope=openid profile email&response_type=code&code_challenge=d46e066c84bb8463c3a3e577419df6f6ca56dca4bd2d6cd631f854f59ee37144666cba9ca54b468de0a4efcc112089e1&code_challenge_method=S256";
+    "http://localhost:4001/oidc/auth?client_id=partner-dashboard-local-2&redirect_uri=http://localhost:3000/auth/callback&scope=openid profile email offline_access&response_type=code&code_challenge=d46e066c84bb8463c3a3e577419df6f6ca56dca4bd2d6cd631f854f59ee37144666cba9ca54b468de0a4efcc112089e1&code_challenge_method=S256";
 
   try {
     const res = await fetch(oidcUrl, {
