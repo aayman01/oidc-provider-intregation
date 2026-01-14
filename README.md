@@ -76,6 +76,39 @@ pnpm start    # Start production server
 pnpm lint     # Run ESLint
 ```
 
+## 🎯 Integration Options
+
+This repository demonstrates **manual PKCE implementation** for learning and testing. For production applications, choose the right integration:
+
+### Option 1: NextAuth.js (Recommended for Production)
+
+**Best for**: Production Next.js applications requiring robust session management
+
+✅ **Pros**:
+
+- Automatic token refresh
+- Built-in session management
+- Minimal setup code
+- Battle-tested in production
+- CSRF protection included
+
+📖 **Guide**: [NextAuth Integration Guide](./NEXTAUTH_INTEGRATION_GUIDE.md)
+
+### Option 2: Manual PKCE Flow (This Repository)
+
+**Best for**: Learning, testing, or custom implementations
+
+✅ **Pros**:
+
+- Full control over the flow
+- Educational value
+- No framework dependencies
+- Custom UI/UX flexibility
+
+📖 **Guide**: See below for manual implementation details
+
+---
+
 ## 🔐 Authentication Flow
 
 ### 1. Start Authorization
@@ -225,10 +258,18 @@ The frontend interacts with these OIDC backend endpoints:
 
 ## 📚 Additional Resources
 
-- [OIDC Implementation Guide](./OIDC_IMPLEMENTATION_GUIDE.html) - Complete technical documentation
+### Integration Guides
+
+- **[NextAuth Integration Guide](./NEXTAUTH_INTEGRATION_GUIDE.md)** - Production-ready Next.js integration with NextAuth.js
+- **[OIDC Implementation Guide](./OIDC_IMPLEMENTATION_GUIDE.html)** - Complete technical documentation
+- **[Token Reference Guide](./TOKEN_REFERENCE_GUIDE.md)** - Quick reference for Access, ID, and Refresh tokens
+
+### Specifications & Documentation
+
 - [OpenID Connect Specification](https://openid.net/specs/openid-connect-core-1_0.html)
 - [OAuth 2.0 PKCE RFC](https://datatracker.ietf.org/doc/html/rfc7636)
 - [Next.js Documentation](https://nextjs.org/docs)
+- [NextAuth.js Documentation](https://next-auth.js.org)
 
 ## 🐛 Troubleshooting
 
